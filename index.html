@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>DINO QUEST — Pixel Runner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+<style>
+  html,body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#0d1b24;
+    font-family:'Press Start 2P','Courier New',monospace; user-select:none; -webkit-user-select:none; touch-action:none; }
+  #game { position:fixed; left:0; top:0; display:block;
+    image-rendering:pixelated; image-rendering:crisp-edges; }
+  /* ---------- HUD ---------- */
+  #hud { position:fixed; top:0; left:0; right:0; display:flex; justify-content:space-between;
+    align-items:flex-start; padding:10px 10px; z-index:5; pointer-events:none; }
+  .pill { background:rgba(15,25,20,.6); color:#fff; border:3px solid #0F0F0F; border-radius:10px;
+    padding:8px 10px; font-size:11px; text-shadow:2px 2px 0 #000; }
+  #topbtns { display:flex; gap:8px; pointer-events:auto; }
+  .iconbtn { width:42px; height:42px; border-radius:10px; border:3px solid #0F0F0F;
+    background:#FFB81C; color:#3A2200; font-size:15px; font-family:inherit; cursor:pointer;
+    box-shadow:0 3px 0 #5A2E0E; }
+  .iconbtn:active { transform:translateY(2px); box-shadow:none; }
+  /* ---------- overlays ---------- */
+  .overlay { position:fixed; inset:0; z-index:10; display:flex; flex-direction:column;
+    align-items:center; text-align:center; padding:9vh 16px 16px; gap:14px; color:#fff; }
+  .overlay.hidden { display:none; }
+  .overlay.dim { background:rgba(10,20,15,.6); justify-content:center; }
+  #menu { pointer-events:none; }
+  #menu .bigbtn { pointer-events:auto; }
+  .title { line-height:1; }
+  .t-dino { display:block; font-size:clamp(34px,10vw,68px); color:#6AB833; letter-spacing:2px;
+    text-shadow:-2px -2px 0 #0F0F0F, 2px -2px 0 #0F0F0F, -2px 2px 0 #0F0F0F, 2px 2px 0 #0F0F0F,
+      0 6px 0 #0F0F0F, 6px 8px 0 rgba(0,0,0,.35); }
+  .t-quest { display:block; font-size:clamp(26px,7.5vw,50px); color:#FFB81C; letter-spacing:2px; margin-top:10px;
+    text-shadow:-2px -2px 0 #0F0F0F, 2px -2px 0 #0F0F0F, -2px 2px 0 #0F0F0F, 2px 2px 0 #0F0F0F,
+      0 6px 0 #0F0F0F, 6px 8px 0 rgba(0,0,0,.35); }
+  .qq { position:relative; display:inline-block; }
+  .qq::after { content:''; position:absolute; left:50%; top:56%; width:.26em; height:.32em;
+    transform:translate(-50%,-50%); background:radial-gradient(circle at 35% 35%, #8ED060 18%, transparent 20%),
+      radial-gradient(circle at 65% 55%, #8ED060 18%, transparent 20%), #fff;
+    border:.07em solid #0F0F0F; border-radius:50% 50% 50% 50% / 62% 62% 38% 38%; }
+  .press { margin-top:14px; font-size:clamp(10px,3vw,14px); color:#1E2A32; letter-spacing:3px;
+    animation:blink 1.1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity:0; } }
+  .bigbtn { font-family:inherit; font-size:15px; color:#3A2200; background:#FFB81C;
+    border:3px solid #0F0F0F; border-radius:12px; padding:14px 26px; cursor:pointer;
+    box-shadow:0 5px 0 #5A2E0E; }
+  .bigbtn:active { transform:translateY(4px); box-shadow:none; }
+  .bigbtn:disabled { filter:grayscale(.8); opacity:.6; }
+  .sub { font-size:10px; line-height:1.9; color:#12261a; background:rgba(255,255,255,.75);
+    border:3px solid #0F0F0F; border-radius:12px; padding:10px 14px; max-width:520px; }
+  .stats { display:flex; gap:10px; }
+  .over-title { font-size:clamp(22px,6vw,40px); color:#FF6B4A;
+    text-shadow:-2px -2px 0 #0F0F0F, 2px -2px 0 #0F0F0F, -2px 2px 0 #0F0F0F, 2px 2px 0 #0F0F0F, 0 6px 0 #0F0F0F; }
+  /* ---------- touch ---------- */
+  #touch { position:fixed; bottom:calc(12px + env(safe-area-inset-bottom)); left:0; right:0; z-index:5;
+    display:flex; gap:12px; padding:0 14px; pointer-events:none; }
+  .tbtn { flex:1; height:76px; min-height:68px; min-width:68px; border-radius:14px; border:3px solid #0F0F0F;
+    background:rgba(255,255,255,.92); color:#1E2A32; font-size:13px; font-family:inherit;
+    box-shadow:0 4px 0 #0F0F0F; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:6px; pointer-events:auto; touch-action:none; }
+  .tbtn:active { transform:translateY(3px); box-shadow:none; }
+  .tri { width:0; height:0; border-left:11px solid transparent; border-right:11px solid transparent; }
+  .tri.up { border-bottom:16px solid #1E2A32; }
+  .tri.down { border-top:16px solid #1E2A32; }
+  #tUp { background:#FFD23F; }
+  #tUp .tri.up { border-bottom-color:#3A2200; }
+  #tDown .tri.down { border-top-color:#1E2A32; }
+  #tUp:active { background:#FFB81C; }
+  #tDown:active { background:#FFB81C; }
+  @media (hover:hover) and (pointer:fine) { #touch { display:none; } }
+  #magnetTag { transition:opacity .3s; }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud">
+  <div style="display:flex;gap:8px;align-items:center">
+    <div class="pill" id="score">0</div>
+    <div class="pill" id="coins">🪙 0</div>
+    <div class="pill" id="hearts">❤❤</div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <div class="pill" id="magnetTag" style="opacity:0">🧲</div>
+    <div id="topbtns">
+      <button class="iconbtn" id="btnMute" title="suara">♪</button>
+      <button class="iconbtn" id="btnPause" title="pause">II</button>
+    </div>
+  </div>
+</div>
+
+<div id="touch">
+  <button class="tbtn" id="tUp"><span class="tri up"></span>LOMPAT</button>
+  <button class="tbtn" id="tDown"><span class="tri down"></span>NUNDUK</button>
+</div>
+
+<div class="overlay" id="menu">
+  <div class="title">
+    <span class="t-dino">DINO</span>
+    <span class="t-quest"><span class="qq">Q</span>UEST</span>
+  </div>
+  <div class="press">- PRESS START -</div>
+  <button class="bigbtn" id="btnPlay">▶ START</button>
+  <div class="sub">▲ lompat = hindari <b style="color:#E8402E">batu & duri!</b><br/>▼ nunduk = hindari <b style="color:#E8402E">burung merah!</b> · 🪙 emas = ambil!</div>
+  <div class="sub" id="loadInfo" style="font-size:9px">best: 0</div>
+</div>
+
+<div class="overlay dim hidden" id="over">
+  <div class="over-title">KETANGKAP!</div>
+  <div class="stats">
+    <div class="pill" id="finalScore">0</div>
+    <div class="pill" id="finalCoins">🪙 0</div>
+    <div class="pill" id="bestScore">🏆 0</div>
+  </div>
+  <button class="bigbtn" id="btnRetry">↻ LARI LAGI</button>
+</div>
+
+<div class="overlay dim hidden" id="paused">
+  <div class="over-title">PAUSE</div>
+  <button class="bigbtn" id="btnResume">▶ LANJUT</button>
+</div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
